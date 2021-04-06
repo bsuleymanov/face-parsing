@@ -78,5 +78,4 @@ class CelebAMaskHQLoader:
             dataset=dataset, batch_size=self.batch_size,
             shuffle=True if self.mode == "train" else False,
             num_workers=2, drop_last=False)
-
         return loader
