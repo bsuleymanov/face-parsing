@@ -73,26 +73,3 @@ class UNet(nn.Module):
         out = self.deconv4(down1, out)
         out = self.last_layer(out)
         return out
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
