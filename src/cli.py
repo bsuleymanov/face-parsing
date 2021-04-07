@@ -18,6 +18,7 @@ def train_from_folder(
     version = "parsenet",
     total_step = 1000000,
     batch_size = 4,
+    accumulation_steps = 2,
     n_workers = 2,
     learning_rate = 0.0002,
     lr_decay = 0.95,
@@ -38,7 +39,7 @@ def train_from_folder(
     test_mask_path = "./test_results",
     test_color_mask_path = "./test_color_visualize",
     log_step = 10,
-    sample_step = 10,
+    sample_step = 100,
     model_save_step = 1.0,
     device = "cuda",
     verbose = 1
@@ -97,9 +98,12 @@ def train_from_folder(
         labels_predict = network(images)
 
         loss = cross_entropy2d(labels_predict, labels_true_plain.long())
-        optimizer.zero_grad()
         loss.backward()
-        optimizer.step()
+
+        if (step + 1) % accumulation_steps == 0:  # Wait for several backward steps
+            optimizer.step()
+            optimizer.zero_grad()
+
 
         if verbose > 0:
             if (step + 1) % log_step == 0:
@@ -114,7 +118,9 @@ def train_from_folder(
         # add tensorboard logging later
 
         if (step + 1) % sample_step == 0:
-            masks_sample = network(images)
+            with torch.no_grad():
+                network.eval()
+                masks_sample = network(images)
             masks_sample = generate_mask(masks_sample, image_size)
             save_image(denorm(masks_sample.data),
                        str(sample_path / f"{step+1}_predict.png"))
