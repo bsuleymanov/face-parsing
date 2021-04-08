@@ -1,4 +1,4 @@
-from dataloader import CelebAMaskHQLoader
+from dataloader import CelebAMaskHQLoader, MaadaaLoader
 import fire
 import time
 import datetime
@@ -30,19 +30,20 @@ def train_from_folder(
     is_train = True,
     parallel = False,
     use_tensorboard = False,
-    image_path = "../data/CelebAMask-HQ/train_images",
-    mask_path = "../data/CelebAMask-HQ/train_masks",
+    image_path = "../data/maadaa/train/image",
+    mask_path = "../data/maadaa/train/seg",
     log_path = "./logs",
     model_save_path = "./models",
     sample_path = "./samples",
-    test_image_path = "../data/CelebAMask-HQ/test_images",
+    test_image_path = "../data/maada/val/image",
     test_mask_path = "./test_results",
     test_color_mask_path = "./test_color_visualize",
     log_step = 10,
     sample_step = 100,
     model_save_step = 1.0,
     device = "cuda",
-    verbose = 1
+    verbose = 1,
+    dataset = "maadaa"
 ):
     sample_path = Path(sample_path)
     model_save_path = Path(model_save_path)
@@ -51,8 +52,12 @@ def train_from_folder(
 
     print(sample_path)
 
-    dataloader = CelebAMaskHQLoader(image_path, mask_path, image_size,
-                                    batch_size, is_train).loader()
+    if dataset == "celeba":
+        dataloader = CelebAMaskHQLoader(image_path, mask_path, image_size,
+                                        batch_size, is_train).loader()
+    elif dataset == "maadaa":
+        dataloader = MaadaaLoader(image_path, mask_path, image_size,
+                                  batch_size, is_train).loader()
 
     # data iterator
     data_iter = iter(dataloader)
@@ -122,8 +127,13 @@ def train_from_folder(
                 network.eval()
                 masks_sample = network(images)
             masks_sample = generate_mask(masks_sample, image_size)
+            masks_true = generate_mask(labels_true.data, image_size)
             save_image(denorm(masks_sample.data),
                        str(sample_path / f"{step+1}_predict.png"))
+            save_image(images.data,
+                       str(sample_path / f"{step + 1}_images.png"))
+            save_image(denorm(masks_true.data),
+                       str(sample_path / f"{step + 1}_true.png"))
 
         if (step + 1) % model_save_step == 0:
             torch.save(network.state_dict(),

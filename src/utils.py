@@ -69,11 +69,14 @@ def cross_entropy2d(input, target, weight=None, size_average=True):
     return loss
 
 
-def tensor_to_label(label_tensor, imtype=np.uint8, device="cuda", to_numpy=False):
+def tensor_to_label(label_tensor, imtype=np.uint8, device="cuda", to_numpy=False, dataset="celeba"):
     label_tensor = label_tensor.to(device).float()
     if label_tensor.size()[0] > 1:
         label_tensor = label_tensor.max(0, keepdim=True)[1]
-    label = colorize_celeba(label_tensor)
+    if dataset == "celeba":
+        label = colorize_celeba(label_tensor)
+    elif dataset == "maadaa":
+        label = colorize_maadaa(label_tensor)
     if to_numpy:
         label = label_tensor.cpu().numpy()
     label = label / 255.0
